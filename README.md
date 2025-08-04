@@ -45,7 +45,50 @@ JWT_SECRET=your_jwt_secret
 CA_PATH=/app/certs/isrgrootx1.pem
 ```
 
-### 2. Build and Run with Docker
+### 2. Database Schema
+
+Before starting the application, create the necessary tables in your TiDB or MySQL-compatible database.
+
+Run the following SQL:
+
+```sql
+-- Switch to your database
+USE test;
+
+-- Create 'users' table
+CREATE TABLE users (
+  id              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  username        VARCHAR(50)     NOT NULL UNIQUE,
+  email           VARCHAR(100)    NOT NULL UNIQUE,
+  password_hash   VARCHAR(100)    NOT NULL,
+  created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Create 'user_tokens' table
+CREATE TABLE user_tokens (
+  id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id       BIGINT UNSIGNED NOT NULL,
+  token         VARCHAR(512)    NOT NULL UNIQUE,
+  expires_at    DATETIME        NOT NULL,
+  created_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user_tokens_user (user_id)
+) ENGINE=InnoDB;
+
+-- Create 'password_reset_tokens' table
+CREATE TABLE password_reset_tokens (
+  id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  user_id       BIGINT UNSIGNED NOT NULL,
+  token         CHAR(64)        NOT NULL UNIQUE,
+  expires_at    DATETIME        NOT NULL,
+  used          TINYINT(1)      NOT NULL DEFAULT 0,
+  created_at    TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_prt_user (user_id)
+) ENGINE=InnoDB;
+```
+
+### 3. Build and Run with Docker
 
 To build and run the entire application stack, use Docker Compose:
 
@@ -57,7 +100,7 @@ This command will:
 - Build the Docker images for the frontend and backend services.
 - Start the containers.
 
-### 3. Accessing the Application
+### 4. Accessing the Application
 
 Once the containers are running, you can access the services at the following URLs:
 
@@ -68,4 +111,3 @@ Once the containers are running, you can access the services at the following UR
 
 - **`frontend`**: A React application built with Vite that serves as the user interface.
 - **`backend`**: A Node.js Express server that provides the API and connects to the TiDB database.
-
